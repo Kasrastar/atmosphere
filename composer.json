@@ -1,0 +1,18 @@
+{
+    "require": {
+        "doctrine/inflector": "^2.0.3",
+        "longman/telegram-bot": "^0.64.0",
+        "vlucas/phpdotenv": "^5.3",
+        "illuminate/database": "^7.30",
+        "symfony/console": "^5.2"
+    },
+    "autoload": {
+        "files": [
+            "src/helpers.php"
+        ],
+        "psr-4": {
+            "Bot\\": "./",
+            "BotFramework\\": "src/"
+        }
+    }
+}
