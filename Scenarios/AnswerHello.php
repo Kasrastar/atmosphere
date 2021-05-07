@@ -17,7 +17,7 @@ class AnswerHello extends Scenario
 
 	protected function handle (Update $update)
 	{
-		$view = new ExampleView('C:\\Users\\PialeChini\\Desktop\\1.jpg', 'Oops!');
+		$view = new ExampleView('C:\\Users\\PialeChini\\Desktop\\2.png', 'Oops!');
 		response()->send($view);
 	}
 }

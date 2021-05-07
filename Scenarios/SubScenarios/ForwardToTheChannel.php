@@ -12,13 +12,8 @@ class ForwardToTheChannel extends SubScenario
 {
 	protected function handle (Update $update)
 	{
-		$user = $update->getMessage()->getFrom();
 		$channel = new PialeChannel();
 
-		$channel->createPost([
-			'$user' => $user->getFirstName() . $user->getLastName(),
-			'$message' => $update->getMessage(),
-			'$channelID' => $channel->getChannelID()
-		]);
+		$channel->createPost('lol');
 	}
 }
