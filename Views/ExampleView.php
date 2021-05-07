@@ -5,21 +5,21 @@ namespace Bot\Views;
 
 
 use BotFramework\Views\View;
-use BotFramework\Views\InjectProperties;
-use BotFramework\Views\ViewBuilder;
+use BotFramework\Facilities\Supports\Traits\PropertyInjection;
+use BotFramework\Views\Designer;
 
 class ExampleView extends View
 {
-	use InjectProperties;
+	use PropertyInjection;
 
 	private $text;
 	private $photo;
 
-	protected function template (ViewBuilder $builder)
+	protected function template (Designer $design)
 	{
-		$builder->photo($this->photo);
+		$design->addPhoto($this->photo);
 
-		$builder->text([
+		$design->addText([
 			'allpha',
 			'beta'
 		]);
