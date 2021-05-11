@@ -2,5 +2,6 @@ src/
 vendor/
 .idea/
 
+.phpunit.result.cache
 composer.lock
 config.env
