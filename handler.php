@@ -10,6 +10,6 @@ use Bot\Providers\MiddlewareProvider;
 use Bot\Providers\ScenarioProvider;
 
 
-$updates = Boot::getUpdates(__DIR__);
-LifeCycle::takeInto($updates, MiddlewareProvider::register(), ScenarioProvider::register());
+$updates = Boot::turnOn()->getUpdates();
 
+LifeCycle::takeInto($updates);

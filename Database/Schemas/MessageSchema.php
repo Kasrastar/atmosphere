@@ -15,7 +15,7 @@ class MessageSchema extends TableSchema
 	public function up ()
 	{
 		Capsule::schema()->create($this->tableName, function (Blueprint $table) {
-			$table->increments('id');
+			$table->id();
 			$table->string('from');
 			$table->string('message');
 			$table->timestamps();

@@ -10,5 +10,4 @@ use BotFramework\TelegramCommunications\Channels\Channel;
 class PialeChannel extends Channel
 {
 	protected static $channelID = '@PialeChannel';
-	protected static $defaultView = ExampleView::class;
 }
