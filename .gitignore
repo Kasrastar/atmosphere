@@ -4,3 +4,4 @@ vendor/
 
 composer.lock
 config.env
+.phpunit.result.cache
