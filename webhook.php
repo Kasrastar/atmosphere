@@ -8,6 +8,6 @@ use BotFramework\LifeCycle;
 use BotFramework\Providers\Boot;
 
 
-$updates = Boot::turnOn()->getUpdates();
+$updates = Boot::turnOn()->getUpdatesWithWebhook();
 
 LifeCycle::takeInto($updates);

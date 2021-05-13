@@ -3,13 +3,10 @@
 namespace Bot\Tests;
 
 
-use Bot\Models\Message;
-use Bot\Views\ExampleView;
-use BotFramework\Views\ViewParser;
-use BotFramework\Tests\TestCase as Bot_TestCase;
+use BotFramework\Tests\TestCase as BotTestCase;
 use BotFramework\Facilities\Factories\UpdateFactory;
 
-class ExampleTest extends Bot_TestCase
+class ExampleTest extends BotTestCase
 {
 //	use RefreshDatabase;
 
@@ -18,13 +15,7 @@ class ExampleTest extends Bot_TestCase
 	 */
 	public function example ()
 	{
-		$update = UpdateFactory::make();
-		$this->incomingUpdate($update);
-
-		Message::create([
-			'from' => \user()->getId(),
-			'message' => \message()->getText(),
-		]);
+		$this->incomingUpdate(UpdateFactory::make());
 
 		$this->assertEquals(1, 1);
 	}

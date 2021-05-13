@@ -16,8 +16,10 @@ class MessageSchema extends TableSchema
 	{
 		Capsule::schema()->create($this->tableName, function (Blueprint $table) {
 			$table->id();
+
 			$table->string('from');
 			$table->string('message');
+
 			$table->timestamps();
 		});
 	}
