@@ -1,11 +1,12 @@
 <?php
 
 
-namespace Bot\Views;
+namespace Bot\App\Views;
 
 
 use BotFramework\App\Views\View;
-use BotFramework\App\Views\Designer;
+use BotFramework\App\Views\Designer\Text;
+use BotFramework\App\Views\Designer\Designer;
 use BotFramework\Core\Supports\Traits\PropertyInjection;
 
 class PialeChannelView extends View
@@ -16,12 +17,12 @@ class PialeChannelView extends View
 
 	protected function template (Designer $designer)
 	{
-		$designer->addText([
+		$designer->add(new Text([
 			'🔸🔻🔹🔸🔻🔹🔸🔻🔹',
 			'',
 			$this->text,
 			'',
 			'🔸🔻🔹🔸🔻🔹🔸🔻🔹',
-		]);
+		]));
 	}
 }

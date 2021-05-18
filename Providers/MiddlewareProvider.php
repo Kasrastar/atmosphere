@@ -6,9 +6,18 @@ namespace Bot\Providers;
 
 class MiddlewareProvider
 {
-	public static function register () : array
+	/**
+	 * @return array[]
+	 */
+	public static function register ()
 	{
 		return [
+			'Middlewares' => [
+
+			],
+			'CallbackQueryMiddlewares' => [
+
+			],
 		];
 	}
 }

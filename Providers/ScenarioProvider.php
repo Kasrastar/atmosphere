@@ -6,9 +6,18 @@ namespace Bot\Providers;
 
 class ScenarioProvider
 {
-	public static function register () : array
+	/**
+	 * @return array[]
+	 */
+	public static function register ()
 	{
 		return [
+			'Scenarios' => [
+				\Bot\App\Scenarios\Every::class,
+			],
+			'CallbackQueryScenarios' => [
+
+			]
 		];
 	}
 }
