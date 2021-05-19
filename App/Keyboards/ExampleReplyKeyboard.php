@@ -11,11 +11,14 @@ class ExampleReplyKeyboard extends ReplyKeyboardMarkup
 {
 	use ReplyKeyboardButton;
 
+	/**
+	 * @return array
+	 */
 	public function template ()
 	{
 		return [
-			[$this->add('sda'), $this->add('fff')],
-			[$this->add('zaaaaaaaaaaart')]
+			[$this->button('sda'), $this->button('fff')],
+			[$this->button('zaaaaaaaaaaart')]
 		];
 	}
 }
