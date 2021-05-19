@@ -14,6 +14,9 @@ use Symfony\Component\Console\Exception\RuntimeException as RuntimeException;
 
 abstract class MakeCommand extends Command
 {
+	/**
+	 * @var string
+	 */
 	protected $template;
 
 	/**
@@ -23,7 +26,14 @@ abstract class MakeCommand extends Command
 	 */
 	protected $componentDirectoryPath;
 
+	/**
+	 * @var string
+	 */
 	protected $providerType;
+
+	/**
+	 * @var string
+	 */
 	protected $providerNamespace;
 
 	protected function create_component ($var)

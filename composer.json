@@ -7,7 +7,6 @@
         "php-di/php-di": "^6.3",
         "fzaninotto/faker": "^1.9",
         "longman/telegram-bot": "^0.72.0",
-      "ext-json": "*"
     },
     "autoload": {
         "files": [
