@@ -16,7 +16,7 @@ class Every extends Scenario
 
 	protected function handle (Update $update)
 	{
-		response()->keyboard(new ExampleReplyKeyboard())->send('done!');
-//		response()->send('done!');
+//		response()->removeKeyboard()->send();
+		response()->keyboard(new ExampleReplyKeyboard())->send('f');
 	}
 }

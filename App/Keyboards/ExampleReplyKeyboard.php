@@ -17,8 +17,8 @@ class ExampleReplyKeyboard extends ReplyKeyboardMarkup
 	public function template ()
 	{
 		return [
-			[$this->button('sda'), $this->button('fff')],
-			[$this->button('zaaaaaaaaaaart')]
+			[$this->button('Aaaaaaaaaaaaa'), $this->button('zaBBBaaart')],
+			[$this->button('kkkkkkCCCCCCkkkkk')]
 		];
 	}
 }
