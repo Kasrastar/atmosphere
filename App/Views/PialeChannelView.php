@@ -4,25 +4,15 @@
 namespace Bot\App\Views;
 
 
-use BotFramework\App\Views\View;
-use BotFramework\App\Views\Designer\Text;
-use BotFramework\App\Views\Designer\Designer;
-use BotFramework\Core\Supports\Traits\PropertyInjection;
+use Atmosphere\Views\View;
+use Atmosphere\Supports\Traits\PropertyInjection;
 
 class PialeChannelView extends View
 {
-	use PropertyInjection;
+//	use PropertyInjection;
 
-	private $text;
-
-	protected function template (Designer $designer)
+	protected function template ()
 	{
-		$designer->add(new Text([
-			'🔸🔻🔹🔸🔻🔹🔸🔻🔹',
-			'',
-			$this->text,
-			'',
-			'🔸🔻🔹🔸🔻🔹🔸🔻🔹',
-		]));
+		// $this->add();
 	}
 }

@@ -29,4 +29,9 @@ class Application
 	{
 		return __DIR__;
 	}
+
+	public static function getLocalizations ()
+	{
+		return require 'Localization/Dictionary.php';
+	}
 }

@@ -4,7 +4,7 @@
 namespace Bot\Database\Schemas;
 
 
-use BotFramework\Database\Schemas\TableSchema;
+use Atmosphere\Database\Schemas\TableSchema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
