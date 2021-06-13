@@ -2,353 +2,488 @@
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-
+use Stringy\Stringy;
+use Nette\PhpGenerator\PhpFile;
+use Nette\PhpGenerator\ClassType;
+use Bot\Providers\MiddlewareProvider;
+use Atmosphere\Middlewares\Middleware;
+use Illuminate\Database\Capsule\Manager;
+use Illuminate\Database\Schema\Blueprint;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Exception\RuntimeException as RuntimeException;
+use Symfony\Component\Console\Output\NullOutput;
+use Longman\TelegramBot\Entities\Update;
+use Bot\Providers\ScenarioProvider;
+use Bot\Providers\SchemaProvider;
+use Atmosphere\Scenarios\Conditions\Condition;
+use Atmosphere\Database\Schemas\TableSchema;
+use Atmosphere\Supports\Traits\PropertyInjection;
+use Atmosphere\Providers\DatabaseServiceProvider;
+use Atmosphere\Scenarios\Scenario;
+use Atmosphere\Scenarios\SubScenarios\SubScenario;
+use Atmosphere\Views\View;
+use Atmosphere\Supports\Str;
+use Atmosphere\Models\Model;
+use Atmosphere\Providers\Boot;
 
-abstract class MakeCommand extends Command
+
+// Class Makers
+// ----------------------------------------------------------------------------------------
+interface HasProvider
+{
+	/**
+	 * @param string $component
+	 *
+	 * @return string
+	 */
+	public function prepareProvider ($component);
+}
+
+abstract class ClassMaker
 {
 	/**
 	 * @var string
 	 */
-	protected $template;
+	protected $componentDirectory;
 
 	/**
-	 * In the form of 'path/to/folder/'
+	 * If has provider
 	 *
 	 * @var string
 	 */
-	protected $componentDirectoryPath;
+	protected $providerPath;
 
 	/**
-	 * @var string
+	 * Create component file and put it's content
+	 *
+	 * @param string $component
 	 */
-	protected $providerType;
+	final public function make ($component)
+	{
+		// put in provider
+		if ($this instanceof HasProvider)
+			file_put_contents($this->providerPath, $this->prepareProvider($component));
+
+		file_put_contents("$this->componentDirectory/$component.php", $this->prepare($component));
+	}
 
 	/**
-	 * @var string
+	 * @param string $component
+	 *
+	 * @return string
 	 */
-	protected $providerNamespace;
+	abstract protected function prepare ($component);
 
-	protected function create_component ($var)
+	/**
+	 * @param array $array
+	 *
+	 * @return string
+	 */
+	final protected function convertArrayToString ($array)
 	{
-		if (is_array($var))
-		{
-			$path_to_file = __DIR__ . '/' . $this->componentDirectoryPath . $var['$name'] . '.php';
-			$keys = array_keys($var);
+		array_walk($array, function (&$value, $index) {
+			$value = (string) Stringy::create($value)->prepend("\n\t\\")->append("::class,");
+		});
 
-			foreach ($keys as $key)
-			{
-				$this->template = str_replace($key, $var[ $key ], $this->template);
-			}
+		return implode('', $array);
+	}
+}
 
-			$content = $this->template;
-		}
+class ScenarioMaker extends ClassMaker implements HasProvider
+{
+	protected $componentDirectory = 'App/Scenarios';
+	protected $providerPath = 'Providers/ScenarioProvider.php';
 
-		else
-		{
-			$path_to_file = __DIR__ . '/' . $this->componentDirectoryPath . "$var.php";
-			$content = str_replace('$name', $var, $this->template);
-		}
-		file_put_contents($path_to_file, $content);
+	protected function prepare ($component)
+	{
+		$file = new PhpFile;
+
+		$namespace = $file->addNamespace('Bot\App\Scenarios')
+			->addUse(Scenario::class)
+			->addUse(Update::class);
+
+		$class = $namespace->addClass($component)
+			->setExtends(Scenario::class);
+
+		$class->addProperty('conditions', [])
+			->addComment('Conditions which update should compatible with' . PHP_EOL)
+			->addComment('@var array')
+			->setProtected();
+
+		$method = $class->addMethod('handle')
+			->addComment('Handle this scenario here' . PHP_EOL)
+			->addComment('@return void')
+			->setProtected()
+			->setBody('// handle');
+
+		$method->addParameter('update')
+			->setType(Update::class);
+
+		return (string) $file;
 	}
 
-	protected function put_in_provider ($name)
+	public function prepareProvider ($component)
 	{
-		$path_to_provider = __DIR__ . '/Providers/' . $this->providerType . 'Provider.php';
+		$scenarios = ( new ReflectionClass(ScenarioProvider::class) )
+			->getMethod('register')->invoke(null);;
 
-		$content = file_get_contents($path_to_provider);
+		$scenarios = $this->convertArrayToString(array_merge($scenarios, [ "Bot\\App\\Scenarios\\$component" ]));
 
-		$where_to_insert = strpos($content, ']') - 1;
-		$what_to_insert = "\t\t\\Bot\\App\\$this->providerNamespace\\$name::class,\n\t";
-		$content = substr_replace($content, $what_to_insert, $where_to_insert, 0);
+		$body = "return [$scenarios\n];";
 
-		file_put_contents($path_to_provider, $content);
+		$file = new PhpFile;
+		$file->addNamespace('Bot\Providers');
+
+		$provider_class = ClassType::from(ScenarioProvider::class);
+		$provider_class->getMethod('register')->setBody($body);
+
+		return $file . PHP_EOL . PHP_EOL . $provider_class;
 	}
+}
+
+class SubScenarioMaker extends ClassMaker
+{
+	protected $componentDirectory = 'App/Scenarios/SubScenarios';
+
+	protected function prepare ($component)
+	{
+		$file = new PhpFile;
+
+		$namespace = $file->addNamespace('Bot\App\Scenarios\SubScenarios')
+			->addUse(SubScenario::class)
+			->addUse(Update::class);
+
+		$class = $namespace->addClass($component)
+			->setExtends(SubScenario::class);
+
+		$method = $class->addMethod('handle')
+			->addComment('Handle this sub scenario here' . PHP_EOL)
+			->addComment('@return void')
+			->setProtected()
+			->setBody('// handle');
+
+		$method->addParameter('update')
+			->setType(Update::class);
+
+		return (string) $file;
+	}
+}
+
+class ConditionMaker extends ClassMaker
+{
+	protected $componentDirectory = 'App/Scenarios/Conditions';
+
+	protected function prepare ($component)
+	{
+		$file = new PhpFile;
+
+		$namespace = $file->addNamespace('Bot\App\Scenarios\Conditions')
+			->addUse(Condition::class)
+			->addUse(Update::class);
+
+		$class = $namespace->addClass($component)
+			->setExtends(Condition::class);
+
+		$method = $class->addMethod('check')
+			->addComment('Check incoming update condition' . PHP_EOL)
+			->addComment('@return bool')
+			->setProtected()
+			->setBody('// do stuff');
+
+		$method->addParameter('update')
+			->setType(Update::class);
+
+		return (string) $file;
+	}
+}
+
+class ModelMaker extends ClassMaker
+{
+	protected $componentDirectory = 'App/Models';
+
+	protected function prepare ($component)
+	{
+		$file = new PhpFile;
+
+		$namespace = $file->addNamespace('Bot\App\Models')
+			->addUse(Model::class);
+
+		$class = $namespace->addClass($component)
+			->setExtends(Model::class);
+
+		$class->addProperty('gaurded', [ 'id' ])->setProtected();
+
+		return (string) $file;
+	}
+}
+
+class SchemaMaker extends ClassMaker implements HasProvider
+{
+	protected $componentDirectory = 'Database/Schemas';
+	protected $providerPath = 'Providers/SchemaProvider.php';
+
+	protected function prepare ($component)
+	{
+		$file = new PhpFile;
+
+		$namespace = $file->addNamespace('Bot\Database\Schemas')
+			->addUse(TableSchema::class)
+			->addUse(Blueprint::class)
+			->addUse(Manager::class);
+
+		$class = $namespace->addClass($component)
+			->setExtends(TableSchema::class);
+
+		$str = Str::getInstance();
+		$table_name = $str->plural($str->snake($component));
+
+		$class->addProperty('tableName', $table_name)->setProtected();
+
+		$class->addMethod('up')
+			->setComment('Schema definition')
+			->setComment('@return void')
+			->setPublic()
+			->addBody('Manager::schema()->create($this->tableName, function (Blueprint $table) {')
+			->addBody("\t\$table->id();")
+			->addBody("\t\$table->timestamps();")
+			->addBody('});');
+
+		return (string) $file;
+	}
+
+	public function prepareProvider ($component)
+	{
+		$schemas = ( new ReflectionClass(SchemaProvider::class) )
+			->getMethod('register')->invoke(null);
+
+		$schemas = $this->convertArrayToString(array_merge($schemas, [ "Bot\\Database\\Schemas\\$component" ]));
+
+		$body = "return [$schemas\n];";
+
+		$file = new PhpFile;
+		$file->addNamespace('Bot\Providers');
+
+		$provider_class = ClassType::from(SchemaProvider::class);
+		$provider_class->getMethod('register')->setBody($body);
+
+		return $file . PHP_EOL . PHP_EOL . $provider_class;
+	}
+}
+
+class ViewMaker extends ClassMaker
+{
+	protected $componentDirectory = 'App/Views';
+
+	protected function prepare ($component)
+	{
+		$file = new PhpFile;
+
+		$namespace = $file->addNamespace('Bot\App\Views')
+			->addUse(View::class)
+			->addUse(PropertyInjection::class);
+
+		$class = $namespace->addClass($component)
+			->setExtends(View::class);
+
+		$method = $class->addMethod('template')
+			->addComment('The view template' . PHP_EOL)
+			->addComment('@return void')
+			->setProtected()
+			->setBody('// $this->add();');
+
+		return (string) $file;
+	}
+}
+
+class MiddlewareMaker extends ClassMaker implements HasProvider
+{
+	protected $componentDirectory = 'App/Middlewares';
+	protected $providerPath = 'Providers/MiddlewareProvider.php';
+
+	protected function prepare ($component)
+	{
+		$file = new PhpFile;
+
+		$namespace = $file->addNamespace('Bot\App\Middlewares')
+			->addUse(Middleware::class)
+			->addUse(Update::class);
+
+		$class = $namespace->addClass($component)
+			->setExtends(Middleware::class);
+
+		$method = $class->addMethod('allow')
+			->addComment('Allow incoming update with specific condition' . PHP_EOL)
+			->addComment('@return bool')
+			->setPublic()
+			->setBody('// return true if you want to allow');
+
+		$method->addParameter('update')
+			->setType(Update::class);
+
+		return (string) $file;
+	}
+
+	public function prepareProvider ($component)
+	{
+		$middlewares = ( new ReflectionClass(MiddlewareProvider::class) )
+			->getMethod('register')->invoke(null);;
+
+		$middlewares = $this->convertArrayToString(array_merge($middlewares, [ "Bot\\App\\Middlewares\\$component" ]));
+
+		$body = "return [$middlewares\n];";
+
+		$file = new PhpFile;
+		$file->addNamespace('Bot\Providers');
+
+		$provider_class = ClassType::from(MiddlewareProvider::class);
+		$provider_class->getMethod('register')->setBody($body);
+
+		return $file . PHP_EOL . PHP_EOL . $provider_class;
+	}
+}
+
+// ----------------------------------------------------------------------------------------
+
+
+// Make Commands
+// ----------------------------------------------------------------------------------------
+abstract class MakeComponent extends Command
+{
+	protected $description;
 
 	protected function configure ()
 	{
-		$this->addArgument('names', InputArgument::IS_ARRAY, 'name or names (space separated)');
+		$this->setDescription($this->description);
+		$this->addArgument('names', InputArgument::IS_ARRAY, 'name/names');
 		$this->addUsage('Foo');
 		$this->addUsage('Foo Bar');
 	}
 
 	protected function execute (InputInterface $input, OutputInterface $output)
 	{
+		$io = new SymfonyStyle($input, $output);
 		$components = $input->getArgument('names');
 
 		if (empty($components))
-			throw new RuntimeException('Error. No name/names are entered.');
+		{
+			$io->error('No name/names found');
+			return Command::FAILURE;
+		}
 
 		foreach ($components as $component)
 		{
-			$this->create_component($component);
-			if ( ! is_null($this->providerType))
-				$this->put_in_provider($component);
+			$this->callMaker($component, $input);
 		}
 
-		$io = new SymfonyStyle($input, $output);
 		$io->success('Done.');
-
 		return Command::SUCCESS;
 	}
+
+	abstract protected function callMaker ($component, InputInterface $input);
 }
 
-class MakeMiddleware extends MakeCommand
+class MakeScenario extends MakeComponent
 {
-	protected $componentDirectoryPath = 'App/Middlewares/';
-	protected $providerType = 'Middleware';
-	protected $providerNamespace = 'Middlewares';
-	protected $template = '<?php
-
-
-namespace Bot\App\Middlewares;
-
-
-use BotFramework\App\Middlewares\Middleware;
-use Longman\TelegramBot\Entities\Update;
-
-class $name extends Middleware
-{
-	public function allow (Update $update) : bool
-	{
-		// handle
-	}
-}
-';
-
-	protected static $defaultName = 'make:middleware';
-
-	protected function configure ()
-	{
-		$this->setDescription('make a new middleware');
-		parent::configure();
-	}
-}
-
-class MakeScenario extends MakeCommand
-{
-	protected $componentDirectoryPath = 'App/Scenarios/';
-	protected $providerType = 'Scenario';
-	protected $providerNamespace = 'Scenarios';
-	protected $template = '<?php
-
-
-namespace Bot\App\Scenarios;
-
-
-use BotFramework\App\Scenarios\Scenario;
-use Longman\TelegramBot\Entities\Update;
-
-class $name extends Scenario
-{
-	protected $conditions = [
-		// condition classes here
-	];
-
-	protected function handle (Update $update)
-	{
-		// handle
-	}
-}
-';
-
 	protected static $defaultName = 'make:scenario';
+	protected $description = 'Make a new scenario';
 
-	protected function configure ()
+	protected function callMaker ($component, InputInterface $input)
 	{
-		$this->setDescription('make a new scenario');
-		parent::configure();
+		( new ScenarioMaker )->make($component);
 	}
 }
 
-class MakeSubScenario extends MakeCommand
+class MakeSubScenario extends MakeComponent
 {
-	protected $componentDirectoryPath = 'App/Scenarios/SubScenarios/';
-	protected $template = '<?php
-
-
-namespace Bot\App\Scenarios\SubScenarios;
-
-
-use BotFramework\App\Scenarios\SubScenarios\SubScenario;
-use Longman\TelegramBot\Entities\Update;
-
-class $name extends SubScenario
-{
-	protected function handle (Update $update)
-	{
-		// handle
-	}
-}
-';
-
 	protected static $defaultName = 'make:sub-scenario';
+	protected $description = 'Make a new sub scenario';
 
-	protected function configure ()
+
+	protected function callMaker ($component, InputInterface $input)
 	{
-		$this->setDescription('make a new sub scenario');
-		parent::configure();
+		( new SubScenarioMaker )->make($component);
 	}
 }
 
-class MakeCondition extends MakeCommand
+class MakeCondition extends MakeComponent
 {
-	protected $componentDirectoryPath = 'App/Scenarios/Conditions/';
-	protected $template = '<?php
-
-
-namespace Bot\App\Scenarios\Conditions;
-
-
-use BotFramework\App\Scenarios\Conditions\Condition;
-use Longman\TelegramBot\Entities\Update;
-
-class $name extends Condition
-{
-	public function check (Update $update) : bool
-	{
-		// check
-	}
-}
-';
-
 	protected static $defaultName = 'make:condition';
+	protected $description = 'Make a new condition';
 
-	protected function configure ()
+
+	protected function callMaker ($component, InputInterface $input)
 	{
-		$this->setDescription('make a new condition');
-		parent::configure();
+		( new ConditionMaker )->make($component);
 	}
 }
 
-class MakeModel extends MakeCommand
+class MakeModel extends MakeComponent
 {
-	protected $componentDirectoryPath = 'App/Models/';
-	protected $template = '<?php
-
-
-namespace Bot\App\Models;
-
-
-use BotFramework\App\Models\Model;
-
-class $name extends Model
-{
-	protected $guarded = ["id"];
-}
-';
-
 	protected static $defaultName = 'make:model';
+	protected $description = 'Make a new model';
 
 	protected function configure ()
 	{
-		$this->setDescription('make a new model');
+		$this->addOption('schema', 's', InputOption::VALUE_NONE,
+			'Make schema with the model');
 		parent::configure();
 	}
 
-	protected function execute (InputInterface $input, OutputInterface $output)
+	protected function callMaker ($component, InputInterface $input)
 	{
-		parent::execute($input, $output);
+		if ($input->getOption('schema'))
+		{
+			$command = $this->getApplication()->find('make:schema');
 
-		$command = $this->getApplication()->find('make:schema');
-		$arguments = $input->getArguments();
+			$arguments = [
+				'names' => [$component],
+			];
 
-		return $command->run(new ArrayInput($arguments), $output);
+			$greetInput = new ArrayInput($arguments);
+			$command->run($greetInput, new NullOutput);
+		}
+
+		( new ModelMaker )->make($component);
 	}
 }
 
-class MakeSchema extends MakeCommand
+class MakeSchema extends MakeComponent
 {
-	protected $componentDirectoryPath = 'Database/Schemas/';
-	protected $providerType = 'Schema';
-	protected $providerNamespace = 'Database\\Schemas';
-	protected $template = "<?php
-
-
-namespace Bot\Database\Schemas;
-
-
-use BotFramework\Database\Schemas\TableSchema;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Database\Capsule\Manager as Capsule;
-
-class \$name extends TableSchema
-{
-	protected \$tableName = '\$table_name';
-
-	public function up ()
-	{
-		Capsule::schema()->create(\$this->tableName, function (Blueprint \$table) {
-			\$table->id();
-			// columns
-			\$table->timestamps();
-		});
-	}
-}
-";
-
-	protected function create_component ($component)
-	{
-		$schema_name = "${component}Schema";
-		$str_instance = \BotFramework\Core\Supports\Str::getInstance();
-		$table = $str_instance->plural($str_instance->snake($component));
-
-		parent::create_component([
-			'$name'       => $schema_name,
-			'$table_name' => $table,
-		]);
-	}
-
-	protected function put_in_provider ($name)
-	{
-		parent::put_in_provider("${name}Schema");
-	}
-
 	protected static $defaultName = 'make:schema';
+	protected $description = 'Make a new schema';
 
-	protected function configure ()
+	protected function callMaker ($component, InputInterface $input)
 	{
-		$this->setDescription('make a new schema');
-		parent::configure();
+		( new SchemaMaker )->make($component);
 	}
 }
 
-class MakeView extends MakeCommand
+class MakeView extends MakeComponent
 {
-	protected $componentDirectoryPath = 'App/Views/';
-	protected $template = '<?php
-
-
-namespace Bot\App\Views;
-
-
-use BotFramework\App\Views\View;
-use BotFramework\App\Views\Designer;
-use BotFramework\Core\Supports\Traits\PropertyInjection;
-
-class $name extends View
-{
-	use PropertyInjection;
-
-	protected function template (Designer $designer)
-	{
-		// design the view here
-	}
-}
-';
 	protected static $defaultName = 'make:view';
+	protected $description = 'Make a new view';
 
-	protected function configure ()
+
+	protected function callMaker ($component, InputInterface $input)
 	{
-		$this->setDescription('make a new view');
-		parent::configure(); // TODO: Change the autogenerated stub
+		( new ViewMaker )->make($component);
+	}
+}
+
+class MakeMiddleware extends MakeComponent
+{
+	protected static $defaultName = 'make:middleware';
+	protected $description = 'Make a new middleware';
+
+	protected function callMaker ($component, InputInterface $input)
+	{
+		( new MiddlewareMaker )->make($component);
 	}
 }
 
@@ -360,7 +495,7 @@ class InitCommand extends Command
 		'App/Models',
 		'App/Scenarios/SubScenarios',
 		'App/Scenarios/Conditions',
-		'App/TelegramCommunications/Channels',
+		'App/Channels',
 		'App/Views',
 	];
 
@@ -392,21 +527,21 @@ class DatabaseBuild extends Command
 		$this->setDescription('build database tables using schemas');
 	}
 
-	protected function execute (InputInterface $input, OutputInterface $output) : int
+	protected function execute (InputInterface $input, OutputInterface $output)
 	{
 		$io = new SymfonyStyle($input, $output);
 
-		$this->rebuild_database();
+		$this->build_database();
 
 		$io->success('Database built successfully');
 
 		return Command::SUCCESS;
 	}
 
-	private function rebuild_database ()
+	private function build_database ()
 	{
-		\BotFramework\Providers\Boot::turnOn();
-		\BotFramework\Providers\DatabaseServiceProvider::build(false);
+		Boot::turnOn();
+		DatabaseServiceProvider::build(false);
 	}
 }
 
@@ -436,10 +571,12 @@ class DatabaseRebuild extends Command
 
 	private function rebuild_database ()
 	{
-		\BotFramework\Providers\Boot::turnOn();
-		\BotFramework\Providers\DatabaseServiceProvider::build(true);
+		Boot::turnOn();
+		DatabaseServiceProvider::build(true);
 	}
 }
+
+// ----------------------------------------------------------------------------------------
 
 $app = new Application('Atmosphere Assistant');
 
