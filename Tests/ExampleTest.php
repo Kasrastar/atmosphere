@@ -3,12 +3,12 @@
 namespace Bot\Tests;
 
 
-use BotFramework\Tests\TestCase as BotTestCase;
-use BotFramework\Facilities\Factories\UpdateFactory;
+use Atmosphere\Tests\TestCase as BotTestCase;
+use Atmosphere\Facilities\Factories\UpdateFactory;
 
 class ExampleTest extends BotTestCase
 {
-//	use RefreshDatabase;
+	//	use RefreshDatabase;
 
 	/**
 	 * @test

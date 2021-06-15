@@ -4,7 +4,7 @@
 namespace Bot\App\Models;
 
 
-use BotFramework\App\Models\Model;
+use Atmosphere\Models\Model;
 
 class Message extends Model
 {

@@ -10,6 +10,12 @@
         "danielstjules/stringy": "^3.1",
         "ext-json": "*"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^8.5",
+        "nette/php-generator": "^3.5",
+        "nikic/php-parser": "^4.10",
+        "symfony/var-dumper": "^5.3"
+    },
     "autoload": {
         "files": [
             "src/helpers.php"
@@ -18,10 +24,5 @@
             "Bot\\": "./",
             "Atmosphere\\": "src/"
         }
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^8.5",
-        "nette/php-generator": "^3.5",
-        "nikic/php-parser": "^4.10"
     }
 }
