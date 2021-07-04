@@ -18,16 +18,17 @@
     },
     "autoload": {
         "files": [
-            "src/helpers.php"
+            "./Atmosphere/src/helpers.php"
         ],
         "psr-4": {
             "Bot\\": "./",
-            "Atmosphere\\": "src/"
+            "Atmosphere\\": "./Atmosphere/src/"
         }
     },
     "scripts": {
         "post-root-package-install": [
-            "php assistant init"
+            "php assistant init",
+            "php -r \"copy('example.env', 'config.env');\""
         ]
     }
 }
