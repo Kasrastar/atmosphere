@@ -19,7 +19,7 @@
   "homepage": "https://github.com/pialechini/atmosphere",
   "require": {
     "php": "^7.3",
-    "pialechini/atmosphere-framework": "*"
+    "pialechini/atmosphere-framework": "0.1.0-alpha"
   },
   "autoload": {
     "psr-4": {
