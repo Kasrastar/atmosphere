@@ -1,4 +1,19 @@
 {
+    "name": "pialechini/atmosphere",
+    "description": "PHP Telegram Bot Framework",
+    "keywords": [
+        "php", "telegram", "bot", "framework"
+    ],
+    "license": "MIT",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Mobin Zohourian",
+            "homepage": "https://github.com/pialechini",
+            "role": "maintainer/developer"
+        }
+    ],
+    "homepage": "https://github.com/pialechini/atmosphere",
     "require": {
         "illuminate/database": "^7.30",
         "doctrine/inflector": "^2.0.3",
@@ -26,7 +41,7 @@
         }
     },
     "scripts": {
-        "post-root-package-install": [
+        "post-create-project-cmd": [
             "php assistant init",
             "php -r \"copy('example.env', 'config.env');\""
         ]
