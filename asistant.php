@@ -549,6 +549,8 @@ class MakeChannel extends MakeComponent
 
 class InitCommand extends Command
 {
+	protected static $defaultName = 'init';
+
 	private $patterns = [
 		'Database/Schemas',
 		'App/Middlewares',
@@ -561,20 +563,29 @@ class InitCommand extends Command
 
 	protected function configure ()
 	{
-		$this->setDescription('initialize directories');
-		$this->addUsage('init');
+		$this->setDescription('initialize App directory');
 	}
-
-	protected static $defaultName = 'init';
 
 	protected function execute (InputInterface $input, OutputInterface $output)
 	{
+		$style = new SymfonyStyle($input, $output);
+
+		$style->title('Checking App Directory');
+
 		foreach ($this->patterns as $pattern)
 		{
-			mkdir($pattern, 0777, true);
+			if (file_exists($pattern))
+			{
+				$style->warning("$pattern already exists, so skipped...");
+			}
+			else
+			{
+				mkdir($pattern, 0777, true);
+				$style->success("$pattern created successfully");
+			}
 		}
 
-		return Command::SUCCESS;
+		return self::SUCCESS;
 	}
 }
 
