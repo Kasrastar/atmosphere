@@ -17,6 +17,6 @@ class ExampleTest extends BotTestCase
 	{
 		$this->incomingUpdate(UpdateFactory::make());
 
-		$this->assertEquals(1, 1);
+		// your tests here
 	}
 }
