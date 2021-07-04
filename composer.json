@@ -33,11 +33,11 @@
     },
     "autoload": {
         "files": [
-            "./Atmosphere/src/helpers.php"
+            "./vendor/pialechini/atmosphere-framework/src/helpers.php"
         ],
         "psr-4": {
             "Bot\\": "./",
-            "Atmosphere\\": "./Atmosphere/src/"
+            "Atmosphere\\": "./vendor/pialechini/atmosphere-framework/src/"
         }
     },
     "scripts": {
