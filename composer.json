@@ -24,5 +24,10 @@
             "Bot\\": "./",
             "Atmosphere\\": "src/"
         }
+    },
+    "scripts": {
+        "post-root-package-install": [
+            "php assistant init"
+        ]
     }
 }

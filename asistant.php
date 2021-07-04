@@ -4,17 +4,20 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 use Stringy\Stringy;
 use Nette\PhpGenerator\PhpFile;
+use Atmosphere\Channels\Channel;
 use Nette\PhpGenerator\ClassType;
 use Bot\Providers\MiddlewareProvider;
 use Atmosphere\Middlewares\Middleware;
 use Illuminate\Database\Capsule\Manager;
 use Illuminate\Database\Schema\Blueprint;
 use Symfony\Component\Console\Application;
+use Atmosphere\Conversations\Conversation;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Console\Input\InputArgument;
+use Atmosphere\Conversations\PersistentProperties;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Output\NullOutput;
@@ -348,6 +351,68 @@ class MiddlewareMaker extends ClassMaker implements HasProvider
 	}
 }
 
+class ConversationMaker extends ClassMaker
+{
+	protected $componentDirectory = 'App/Conversations';
+
+	protected function prepare ($component)
+	{
+		$file = new PhpFile;
+
+		$namespace = $file->addNamespace('Bot\App\Conversations')
+			->addUse(Conversation::class)
+			->addUse(Update::class)
+			->addUse(JsonSerializable::class)
+			->addUse(PersistentProperties::class);
+
+		$class = $namespace->addClass($component)
+			->setExtends(Conversation::class)
+			->addImplement(JsonSerializable::class)
+			->addTrait(PersistentProperties::class);
+
+		$class->addMethod('onConversationStart')
+			->addComment('Executes when conversation starts' . PHP_EOL)
+			->addComment('@return void')
+			->setPublic()
+			->setBody('// response() or something else');
+
+		$method = $class->addMethod('onConversationEnd')
+			->addComment('Executes when conversation is finished' . PHP_EOL)
+			->addComment('@param Update $last_update' . PHP_EOL)
+			->addComment('@return void')
+			->setPublic()
+			->setBody('// response() or something else');
+
+		$method->addParameter('last_update')
+			->setType(Update::class);
+
+		return (string) $file;
+	}
+}
+
+class ChannelMaker extends ClassMaker
+{
+	protected $componentDirectory = 'App/Channels';
+
+	protected function prepare ($component)
+	{
+		$file = new PhpFile;
+
+		$namespace = $file->addNamespace('Bot\App\Channels')
+			->addUse(Channel::class);
+
+		$class = $namespace->addClass($component)
+			->setExtends(Channel::class);
+
+		$class->addProperty('channelID')
+			->setProtected()
+			->setStatic()
+			->setValue('@YOUR_CHANNEL_ID');
+
+		return (string) $file;
+	}
+}
+
 // ----------------------------------------------------------------------------------------
 
 
@@ -356,6 +421,11 @@ class MiddlewareMaker extends ClassMaker implements HasProvider
 abstract class MakeComponent extends Command
 {
 	protected $description;
+
+	/**
+	 * @var ClassMaker
+	 */
+	protected $maker;
 
 	protected function configure ()
 	{
@@ -385,42 +455,31 @@ abstract class MakeComponent extends Command
 		return Command::SUCCESS;
 	}
 
-	abstract protected function callMaker ($component, InputInterface $input);
+	protected function callMaker ($component, InputInterface $input)
+	{
+		( new $this->maker )->make($component);
+	}
 }
 
 class MakeScenario extends MakeComponent
 {
 	protected static $defaultName = 'make:scenario';
 	protected $description = 'Make a new scenario';
-
-	protected function callMaker ($component, InputInterface $input)
-	{
-		( new ScenarioMaker )->make($component);
-	}
+	protected $maker = ScenarioMaker::class;
 }
 
 class MakeSubScenario extends MakeComponent
 {
 	protected static $defaultName = 'make:sub-scenario';
 	protected $description = 'Make a new sub scenario';
-
-
-	protected function callMaker ($component, InputInterface $input)
-	{
-		( new SubScenarioMaker )->make($component);
-	}
+	protected $maker = SubScenarioMaker::class;
 }
 
 class MakeCondition extends MakeComponent
 {
 	protected static $defaultName = 'make:condition';
 	protected $description = 'Make a new condition';
-
-
-	protected function callMaker ($component, InputInterface $input)
-	{
-		( new ConditionMaker )->make($component);
-	}
+	protected $maker = ConditionMaker::class;
 }
 
 class MakeModel extends MakeComponent
@@ -442,7 +501,7 @@ class MakeModel extends MakeComponent
 			$command = $this->getApplication()->find('make:schema');
 
 			$arguments = [
-				'names' => [$component],
+				'names' => [ $component ],
 			];
 
 			$greetInput = new ArrayInput($arguments);
@@ -457,34 +516,35 @@ class MakeSchema extends MakeComponent
 {
 	protected static $defaultName = 'make:schema';
 	protected $description = 'Make a new schema';
-
-	protected function callMaker ($component, InputInterface $input)
-	{
-		( new SchemaMaker )->make($component);
-	}
+	protected $maker = SchemaMaker::class;
 }
 
 class MakeView extends MakeComponent
 {
 	protected static $defaultName = 'make:view';
 	protected $description = 'Make a new view';
-
-
-	protected function callMaker ($component, InputInterface $input)
-	{
-		( new ViewMaker )->make($component);
-	}
+	protected $maker = ViewMaker::class;
 }
 
 class MakeMiddleware extends MakeComponent
 {
 	protected static $defaultName = 'make:middleware';
 	protected $description = 'Make a new middleware';
+	protected $maker = MiddlewareMaker::class;
+}
 
-	protected function callMaker ($component, InputInterface $input)
-	{
-		( new MiddlewareMaker )->make($component);
-	}
+class MakeConversation extends MakeComponent
+{
+	protected static $defaultName = 'make:conversation';
+	protected $description = 'Make a new conversation';
+	protected $maker = ConversationMaker::class;
+}
+
+class MakeChannel extends MakeComponent
+{
+	protected static $defaultName = 'make:channel';
+	protected $description = 'Make a new channel';
+	protected $maker = ChannelMaker::class;
 }
 
 class InitCommand extends Command
@@ -588,6 +648,8 @@ $app->addCommands([
 	new MakeModel(),
 	new MakeSchema(),
 	new MakeView(),
+	new MakeConversation(),
+	new MakeChannel(),
 	new InitCommand(),
 	new DatabaseBuild(),
 	new DatabaseRebuild(),

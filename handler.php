@@ -4,8 +4,8 @@
 require_once __DIR__ . '/vendor/autoload.php';
 
 
-use BotFramework\LifeCycle;
-use BotFramework\Providers\Boot;
+use Atmosphere\LifeCycle;
+use Atmosphere\Providers\Boot;
 
 
 $updates = Boot::turnOn()->getUpdates();
