@@ -1,49 +1,53 @@
 {
-    "name": "pialechini/atmosphere",
-    "description": "PHP Telegram Bot Framework",
-    "keywords": [
-        "php", "telegram", "bot", "framework"
-    ],
-    "license": "MIT",
-    "type": "project",
-    "authors": [
-        {
-            "name": "Mobin Zohourian",
-            "homepage": "https://github.com/pialechini",
-            "role": "maintainer/developer"
-        }
-    ],
-    "homepage": "https://github.com/pialechini/atmosphere",
-    "require": {
-        "illuminate/database": "^7.30",
-        "doctrine/inflector": "^2.0.3",
-        "vlucas/phpdotenv": "^5.3",
-        "symfony/console": "^5.2",
-        "php-di/php-di": "^6.3",
-        "fzaninotto/faker": "^1.9",
-        "longman/telegram-bot": "^0.72.0",
-        "danielstjules/stringy": "^3.1",
-        "ext-json": "*"
-    },
-    "require-dev": {
-        "phpunit/phpunit": "^8.5",
-        "nette/php-generator": "^3.5",
-        "nikic/php-parser": "^4.10",
-        "symfony/var-dumper": "^5.3"
-    },
-    "autoload": {
-        "files": [
-            "./Atmosphere/src/helpers.php"
-        ],
-        "psr-4": {
-            "Bot\\": "./",
-            "Atmosphere\\": "./Atmosphere/src/"
-        }
-    },
-    "scripts": {
-        "post-create-project-cmd": [
-            "php assistant init",
-            "php -r \"copy('example.env', 'config.env');\""
-        ]
+  "name": "pialechini/atmosphere",
+  "description": "PHP Telegram Bot Framework",
+  "keywords": [
+    "php",
+    "telegram",
+    "bot",
+    "framework"
+  ],
+  "license": "MIT",
+  "type": "project",
+  "authors": [
+    {
+      "name": "Mobin Zohourian",
+      "homepage": "https://github.com/pialechini",
+      "role": "maintainer/developer"
     }
+  ],
+  "homepage": "https://github.com/pialechini/atmosphere",
+  "require": {
+    "php": "^7.3",
+    "illuminate/database": "^7.30",
+    "doctrine/inflector": "^2.0.3",
+    "vlucas/phpdotenv": "^5.3",
+    "symfony/console": "^5.2",
+    "php-di/php-di": "^6.3",
+    "fzaninotto/faker": "^1.9",
+    "longman/telegram-bot": "^0.72.0",
+    "danielstjules/stringy": "^3.1",
+    "ext-json": "*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^8.5",
+    "nette/php-generator": "^3.5",
+    "nikic/php-parser": "^4.10",
+    "symfony/var-dumper": "^5.3"
+  },
+  "autoload": {
+    "files": [
+      "./Atmosphere/src/helpers.php"
+    ],
+    "psr-4": {
+      "Bot\\": "./",
+      "Atmosphere\\": "./Atmosphere/src/"
+    }
+  },
+  "scripts": {
+    "post-create-project-cmd": [
+      "php assistant init",
+      "php -r \"copy('example.env', 'config.env');\""
+    ]
+  }
 }

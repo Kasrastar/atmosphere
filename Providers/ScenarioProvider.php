@@ -11,6 +11,7 @@ class ScenarioProvider
 	public static function register()
 	{
 		return [
+			
 		];
 	}
 }
