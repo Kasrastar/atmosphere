@@ -1,6 +1,14 @@
-Atmosphere/
+bin/
+localization/
 vendor/
 .idea/
+
+app/Channels/
+app/Controllers/
+app/Conversations/
+app/Keyboards
+app/Middlewares/
+app/Views/
 
 composer.lock
 config.env
