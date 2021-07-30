@@ -496,7 +496,7 @@ class DatabaseBuild extends Command
 	private function build_database ()
 	{
 		Boot::loadConfig(__DIR__)->turnOn(new \App\Kernel);
-		app()->make(DatabaseServiceProvider::class)->build(false);
+		app()->call([DatabaseServiceProvider::class, 'build'], ['rebuild' => false]);
 	}
 }
 
@@ -527,7 +527,7 @@ class DatabaseRebuild extends Command
 	private function rebuild_database ()
 	{
 		Boot::loadConfig(__DIR__)->turnOn(new \App\Kernel);
-		app()->make(DatabaseServiceProvider::class)->build(true);
+		app()->call([DatabaseServiceProvider::class, 'build'], ['rebuild' => true]);
 	}
 }
 
