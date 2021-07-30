@@ -441,7 +441,7 @@ class InitCommand extends Command
 		'app/Keyboards',
 		'app/Middlewares',
 		'app/Models',
-		'app/database/Schemas',
+		'app/Schemas',
 		'app/Views',
 	];
 	
