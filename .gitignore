@@ -1,8 +1,15 @@
-Atmosphere/
+bin/
+localization/
 vendor/
 .idea/
 
-.phpunit.result.cache
+app/Channels/
+app/Controllers/
+app/Conversations/
+app/Keyboards
+app/Middlewares/
+app/Views/
+
 composer.lock
 config.env
 .phpunit.result.cache

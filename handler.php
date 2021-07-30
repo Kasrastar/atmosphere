@@ -1,13 +1,12 @@
 <?php
 
-
 require_once __DIR__ . '/vendor/autoload.php';
 
+use App\Kernel;
+use Atmosphere\Core\Boot;
+use Atmosphere\Facade\LifeCycle;
 
-use Atmosphere\LifeCycle;
-use Atmosphere\Providers\Boot;
+require_once 'routes/router.php';
 
-
-$updates = Boot::turnOn()->getUpdates();
-
-LifeCycle::takeInto($updates);
+$boot = Boot::loadConfig(__DIR__)->turnOn(new Kernel);
+LifeCycle::takeInto($boot->getUpdates());
